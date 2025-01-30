@@ -71,20 +71,54 @@ if (!empty($fileName)) {
 
         </canvas>
         <script src="scripts/chart.umd.js"></script>
+    <?php
+        $labels = array_keys($stats);
+        sort($labels);
+        $pm25 = [];
+        $pm10 = [];
+        foreach ($labels as $label) {
+            $measurements = $stats[$label];
+            if (count($measurements['pm25']) !== 0) {
+                $pm25[] = array_sum($measurements['pm25']) / count($measurements['pm25']);
+            } else {
+                $pm25[] = 0;
+            }
+              if (count($measurements['pm10']) !== 0) {
+                  $pm10[] = array_sum($measurements['pm10']) / count($measurements['pm10']);
+              } else {
+                  $pm10[] = 0;
+              }
+
+        }
+
+        $dataSets = [];
+        if (array_sum($pm25) > 0) {
+            $dataSets[] = [
+                'label' => "AQI, PM2.5 in {$units['pm25']}",
+                'data' => $pm25,
+                'fill' => false,
+                'borderColor' => 'rgb(75, 192, 192)',
+                'tension' => 0.1,
+            ];
+        }
+        if (array_sum($pm10) > 0) {
+                $dataSets[] = [
+                    'label' => "AQI, PM10 in {$units['pm10']}",
+                    'data' => $pm10,
+                    'fill' => false,
+                    'borderColor' => 'rgb(141,177,57)',
+                    'tension' => 0.1,
+                ];
+            }
+        ?>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
                 const ctx = document.getElementById('aqi-chart');
-                const labels = ['Label 01', 'Label 02', 'Label 03', 'Label 04', 'Label 05', 'Label 06', 'Label 07'];
+                const labels = <?php echo json_encode($labels)?>;
                 const data = {
                     labels: labels,
-                    datasets: [{
-                        label: 'My First Dataset',
-                        data: [65, 59, 80, 81, 56, 55, 40],
-                        fill: false,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
+                    datasets: <?php echo json_encode($dataSets)?>
                 };
                 const myChart = new Chart(ctx, {
                     type: 'line',
@@ -105,12 +139,20 @@ if (!empty($fileName)) {
              <tr>
                 <th><?php echo e($month); ?></th>
                  <td>
+                     <?php if(count($measurements['pm25']) !== 0): ?>
                      <?php echo e(round(array_sum($measurements['pm25']) / count($measurements['pm25']), 2)); ?>
                      <?php echo e($units['pm25']); ?>
+                     <?php else: ?>
+                     <i>No data available</i>
+                     <?php endif; ?>
                  </td>
                  <td>
+                     <?php if(count($measurements['pm10']) !== 0): ?>
                      <?php echo e(round(array_sum($measurements['pm10']) / count($measurements['pm10']), 2)); ?>
                      <?php echo e($units['pm10']); ?>
+                     <?php else: ?>
+                     <i>No data available</i>
+                     <?php endif; ?>
                  </td>
              </tr>
         </tbody>
